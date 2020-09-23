@@ -1,0 +1,25 @@
+---
+# tasks file for deploy-to-tomcat
+- name: Invoke task to stop tomcat
+  include_role:
+    name: install_tomcat
+    tasks_from: stop-tomcat
+- name: Delete existing deployment war
+  file:
+    path: "/opt/tomcat/webapps/{{war_file_name}}"
+    state: absent
+  become: true
+- name: Delete existing deployment folder
+  file:
+    path: "/opt/tomcat/webapps/{{war_file_name | splitext | first}}"
+    state: absent
+  become: true
+- name: Copy files to the app appservers
+  copy:
+    src: "{{war_file_name}}"
+    dest: "/opt/tomcat/webapps/{{war_file_name}}"
+    owner: tomcat
+    group: tomcat
+    mode: u+rw,g+rw,o-wx
+  become: true
+  notify: Start Tomcat Service

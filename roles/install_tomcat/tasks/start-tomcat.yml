@@ -1,0 +1,7 @@
+---
+- name: Start Tomcat Service
+  service:
+    name: tomcat
+    state: started
+  become: true
+

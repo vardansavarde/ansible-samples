@@ -1,0 +1,11 @@
+---
+# handlers file for install_tomcat
+- name: Restart Tomcat Service
+  include_tasks:
+    file: ../tasks/restart-tomcat.yml
+- name: Stop Tomcat Service
+  include_tasks:
+    file: ../tasks/stop-tomcat.yml
+- name: Start Tomcat Service
+  include_tasks:
+    file: ../tasks/start-tomcat.yml

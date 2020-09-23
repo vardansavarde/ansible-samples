@@ -1,0 +1,63 @@
+---
+- name: install jdk
+  yum:
+    name: java-1.8.0-openjdk
+    state: present
+  become: true
+- name: Ensure group "tomcat" exists
+  group:
+    name: tomcat
+    state: present
+  become: true
+- name: Create user - tomcat
+  user:
+    name: tomcat
+    group: tomcat
+    shell: /bin/false
+    home: /opt/tomcat
+  become: true
+- name: check whether tomcat is already installed
+  stat:
+    path: /opt/tomcat/conf
+  register: tomcatpresence
+  become: true
+- debug:
+    msg: "tomcat is installed"
+  when: tomcatpresence.stat.isdir is defined and tomcatpresence.stat.isdir
+- debug:
+    msg: "tomcat is not installed"
+  when: tomcatpresence.stat.isdir is not defined or not tomcatpresence.stat.isdir
+- name: Download tomcat archive
+  get_url:
+    url: https://downloads.apache.org/tomcat/tomcat-8/v8.5.57/bin/apache-tomcat-8.5.57.tar.gz
+    dest: ./tomcat.tar.gz
+  when: tomcatpresence.stat.isdir is not defined or not tomcatpresence.stat.isdir
+- name: extract
+  command:
+    cmd: tar -xf ./tomcat.tar.gz --group=tomcat --owner=tomcat -C /opt/tomcat --strip-components=1
+    warn: no
+  become: true
+  when: tomcatpresence.stat.isdir is not defined or not tomcatpresence.stat.isdir
+- name: change ownership
+  command:
+    cmd: chown tomcat:tomcat -R /opt/tomcat
+    warn: no
+  become: true
+  when: tomcatpresence.stat.isdir is not defined or not tomcatpresence.stat.isdir
+- name: copy tomcat service file
+  template:
+    src: ./roles/install_tomcat/templates/tomcat.service.template
+    dest: /etc/systemd/system/tomcat.service
+  become: true
+  when: tomcatpresence.stat.isdir is not defined or not tomcatpresence.stat.isdir
+- name: reload system ctl
+  systemd:
+    daemon_reload: yes
+  become: true
+  when: tomcatpresence.stat.isdir is not defined or not tomcatpresence.stat.isdir
+- name: Start Tomcat and enable it to run on startup
+  service:
+    name: tomcat
+    state: started
+    enabled: yes
+  become: true
